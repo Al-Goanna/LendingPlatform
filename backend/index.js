@@ -161,12 +161,6 @@ async function createLoan(req, res) {
   const createApplicationResult = await algosdk.waitForConfirmation(
       algodClient, sentCreateApplicationTransaction.txId, 3);
 
-  await pgClient.query('INSERT INTO listings (app_id, date) VALUES ($1, $2)',
-      [
-        createApplicationResult['application-index'],
-        new Date().toISOString(),
-      ]);
-
   const paymentTransaction = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
     suggestedParams: {
       ...params,
