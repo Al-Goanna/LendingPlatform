@@ -1,16 +1,40 @@
 import React from 'react';
+import {Provider} from 'react-redux';
 import ReactDOM from 'react-dom/client';
+import {BrowserRouter as Router} from 'react-router-dom';
+
 import App from './App';
-import reportWebVitals from './reportWebVitals';
+
+import {Toaster} from 'react-hot-toast';
+
+import store from './services/reducers/store';
+
+import ScrollToTop from './helpers/scrollToTop';
+
+import './index.scss';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+    <Provider store={store}>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            border: `1px solid #df57eb`,
+            padding: '16px',
+            background: 'rgba(0,0,0,0.5)',
+            color: '#fff',
+          },
+          iconTheme: {
+            primary: `#df57eb`,
+            secondary: '#000',
+          },
+        }}
+      />
+      <Router>
+        <ScrollToTop />
+        <App />
+      </Router>
+    </Provider>,
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();

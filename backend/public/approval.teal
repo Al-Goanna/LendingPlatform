@@ -1,0 +1,783 @@
+#pragma version 6
+txn ApplicationID
+int 0
+==
+bnz main_l25
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l24
+txn OnCompletion
+int UpdateApplication
+==
+bnz main_l23
+txn OnCompletion
+int OptIn
+==
+bnz main_l22
+txn OnCompletion
+int CloseOut
+==
+bnz main_l21
+txn OnCompletion
+int NoOp
+==
+bnz main_l7
+err
+main_l7:
+txna ApplicationArgs 0
+byte "setup"
+==
+bnz main_l20
+txna ApplicationArgs 0
+byte "lend"
+==
+bnz main_l19
+txna ApplicationArgs 0
+byte "pay"
+==
+bnz main_l18
+txna ApplicationArgs 0
+byte "partial_pay"
+==
+bnz main_l17
+txna ApplicationArgs 0
+byte "claim_debt"
+==
+bnz main_l16
+txna ApplicationArgs 0
+byte "claim_nft"
+==
+bnz main_l14
+err
+main_l14:
+callsub claimnft_11
+main_l15:
+int 0
+return
+main_l16:
+callsub claimdebt_10
+b main_l15
+main_l17:
+callsub partialpaydebt_9
+b main_l15
+main_l18:
+callsub paydebt_8
+b main_l15
+main_l19:
+callsub lendnft_7
+b main_l15
+main_l20:
+callsub setupcontract_6
+b main_l15
+main_l21:
+int 0
+return
+main_l22:
+int 0
+return
+main_l23:
+callsub update_4
+int 0
+return
+main_l24:
+callsub delete_5
+int 0
+return
+main_l25:
+callsub init_3
+int 0
+return
+
+// contract_opt_into_asset
+contractoptintoasset_0:
+store 0
+itxn_begin
+int axfer
+itxn_field TypeEnum
+load 0
+itxn_field XferAsset
+int 0
+itxn_field Fee
+global CurrentApplicationAddress
+itxn_field AssetReceiver
+itxn_submit
+retsub
+
+// asset_transfer
+assettransfer_1:
+store 9
+store 8
+store 7
+itxn_begin
+int axfer
+itxn_field TypeEnum
+load 7
+itxn_field XferAsset
+load 8
+itxn_field AssetReceiver
+int 0
+itxn_field Fee
+load 9
+itxn_field AssetAmount
+itxn_submit
+retsub
+
+// payment
+payment_2:
+store 6
+store 5
+itxn_begin
+int pay
+itxn_field TypeEnum
+load 5
+itxn_field Receiver
+int 0
+itxn_field Fee
+load 6
+itxn_field Amount
+itxn_submit
+retsub
+
+// init
+init_3:
+global GroupSize
+int 1
+==
+txn GroupIndex
+int 0
+==
+&&
+assert
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+assert
+gtxn 0 TypeEnum
+int appl
+==
+gtxn 0 Fee
+global MinTxnFee
+==
+&&
+assert
+int 1
+return
+
+// update
+update_4:
+global GroupSize
+int 1
+==
+txn GroupIndex
+int 0
+==
+&&
+assert
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+assert
+gtxn 0 TypeEnum
+int appl
+==
+gtxn 0 ApplicationID
+global CurrentApplicationID
+==
+&&
+gtxn 0 Fee
+global MinTxnFee
+==
+&&
+gtxn 0 Sender
+global CreatorAddress
+==
+&&
+assert
+int 1
+return
+
+// delete
+delete_5:
+global GroupSize
+int 1
+==
+txn GroupIndex
+int 0
+==
+&&
+assert
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+assert
+gtxn 0 TypeEnum
+int appl
+==
+gtxn 0 ApplicationID
+global CurrentApplicationID
+==
+&&
+gtxn 0 Fee
+global MinTxnFee
+==
+&&
+gtxn 0 Sender
+global CreatorAddress
+==
+&&
+byte "global_lend_status"
+app_global_get
+byte "paid"
+==
+&&
+assert
+int 1
+return
+
+// setup_contract
+setupcontract_6:
+global GroupSize
+int 2
+==
+txn GroupIndex
+int 1
+==
+&&
+assert
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+&&
+assert
+gtxn 0 TypeEnum
+int pay
+==
+gtxn 0 Fee
+global MinTxnFee
+==
+&&
+gtxn 0 Receiver
+global CurrentApplicationAddress
+==
+&&
+gtxn 0 Amount
+int 200000
+>
+&&
+gtxn 1 TypeEnum
+int appl
+==
+&&
+gtxn 1 ApplicationID
+global CurrentApplicationID
+==
+&&
+gtxn 1 Sender
+global CreatorAddress
+==
+&&
+gtxn 1 Fee
+global MinTxnFee
+int 2
+*
+==
+&&
+gtxna 1 ApplicationArgs 1
+btoi
+gtxn 0 Amount
+int 200000
+-
+>
+&&
+gtxna 1 ApplicationArgs 2
+btoi
+int 0
+>
+&&
+assert
+gtxna 1 Assets 0
+callsub contractoptintoasset_0
+byte "global_lend_asset"
+gtxna 1 Assets 0
+app_global_put
+byte "global_lend_amount"
+gtxn 0 Amount
+int 200000
+-
+app_global_put
+byte "global_lend_paid"
+int 0
+app_global_put
+byte "global_lend_status"
+byte "funded"
+app_global_put
+byte "global_lend_payback"
+gtxna 1 ApplicationArgs 1
+btoi
+app_global_put
+byte "global_lend_time"
+gtxna 1 ApplicationArgs 2
+btoi
+app_global_put
+int 1
+return
+
+// lend_nft
+lendnft_7:
+gtxna 0 Assets 0
+asset_params_get AssetFreeze
+store 2
+store 1
+gtxna 0 Assets 0
+asset_params_get AssetClawback
+store 4
+store 3
+global GroupSize
+int 2
+==
+txn GroupIndex
+int 0
+==
+&&
+assert
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+&&
+assert
+byte "global_lend_status"
+app_global_get
+byte "funded"
+==
+load 1
+global ZeroAddress
+==
+&&
+load 3
+global ZeroAddress
+==
+&&
+gtxn 0 TypeEnum
+int appl
+==
+&&
+gtxn 0 ApplicationID
+global CurrentApplicationID
+==
+&&
+gtxn 0 Fee
+global MinTxnFee
+int 2
+*
+==
+&&
+gtxna 0 Assets 0
+gtxn 1 XferAsset
+==
+&&
+gtxn 1 TypeEnum
+int axfer
+==
+&&
+gtxn 1 Fee
+global MinTxnFee
+==
+&&
+gtxn 1 AssetReceiver
+global CurrentApplicationAddress
+==
+&&
+gtxn 1 XferAsset
+byte "global_lend_asset"
+app_global_get
+==
+&&
+gtxn 1 AssetAmount
+int 1
+==
+&&
+assert
+gtxn 1 Sender
+global CurrentApplicationAddress
+balance
+global CurrentApplicationAddress
+min_balance
+-
+callsub payment_2
+byte "global_lend_status"
+byte "lent"
+app_global_put
+byte "global_lend_address"
+gtxn 1 Sender
+app_global_put
+byte "global_lend_date"
+global LatestTimestamp
+app_global_put
+int 1
+return
+
+// pay_debt
+paydebt_8:
+global GroupSize
+int 3
+==
+txn GroupIndex
+int 1
+==
+&&
+assert
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+&&
+gtxn 2 RekeyTo
+global ZeroAddress
+==
+&&
+assert
+global LatestTimestamp
+byte "global_lend_date"
+app_global_get
+byte "global_lend_time"
+app_global_get
++
+<
+bnz paydebt_8_l4
+gtxn 2 Amount
+byte "global_lend_payback"
+app_global_get
+==
+assert
+paydebt_8_l2:
+byte "global_lend_status"
+app_global_get
+byte "lent"
+==
+gtxn 0 TypeEnum
+int axfer
+==
+&&
+gtxn 0 Fee
+global MinTxnFee
+==
+&&
+gtxn 0 Sender
+gtxn 0 AssetReceiver
+==
+&&
+gtxn 0 XferAsset
+byte "global_lend_asset"
+app_global_get
+==
+&&
+gtxn 0 AssetAmount
+int 0
+==
+&&
+gtxn 0 AssetCloseTo
+global ZeroAddress
+==
+&&
+gtxn 1 TypeEnum
+int appl
+==
+&&
+gtxn 1 ApplicationID
+global CurrentApplicationID
+==
+&&
+gtxn 1 Fee
+global MinTxnFee
+int 3
+*
+==
+&&
+gtxna 1 Assets 0
+byte "global_lend_asset"
+app_global_get
+==
+&&
+gtxn 2 TypeEnum
+int pay
+==
+&&
+gtxn 2 Fee
+global MinTxnFee
+==
+&&
+gtxn 2 Receiver
+global CurrentApplicationAddress
+==
+&&
+assert
+gtxn 2 Sender
+byte "global_lend_address"
+app_global_get
+!=
+bz paydebt_8_l5
+byte "global_lend_address"
+app_global_get
+byte "global_lend_paid"
+app_global_get
+callsub payment_2
+b paydebt_8_l5
+paydebt_8_l4:
+gtxn 2 Sender
+byte "global_lend_address"
+app_global_get
+==
+gtxn 2 Amount
+byte "global_lend_payback"
+app_global_get
+byte "global_lend_paid"
+app_global_get
+-
+==
+&&
+assert
+b paydebt_8_l2
+paydebt_8_l5:
+byte "global_lend_asset"
+app_global_get
+gtxn 2 Sender
+int 1
+callsub assettransfer_1
+byte "global_lend_paid"
+byte "global_lend_payback"
+app_global_get
+app_global_put
+byte "global_lend_status"
+byte "paid"
+app_global_put
+int 1
+return
+
+// partial_pay_debt
+partialpaydebt_9:
+global GroupSize
+int 2
+==
+txn GroupIndex
+int 0
+==
+&&
+assert
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+&&
+assert
+byte "global_lend_status"
+app_global_get
+byte "lent"
+==
+gtxn 0 TypeEnum
+int appl
+==
+&&
+gtxn 0 ApplicationID
+global CurrentApplicationID
+==
+&&
+gtxn 0 Fee
+global MinTxnFee
+int 2
+*
+==
+&&
+gtxna 0 Assets 0
+byte "global_lend_asset"
+app_global_get
+==
+&&
+gtxn 1 TypeEnum
+int pay
+==
+&&
+gtxn 1 Fee
+global MinTxnFee
+==
+&&
+gtxn 1 Sender
+byte "global_lend_address"
+app_global_get
+==
+&&
+gtxn 1 Receiver
+global CurrentApplicationAddress
+==
+&&
+gtxn 1 Amount
+byte "global_lend_payback"
+app_global_get
+byte "global_lend_paid"
+app_global_get
+-
+<
+&&
+assert
+byte "global_lend_paid"
+byte "global_lend_paid"
+app_global_get
+gtxn 1 Amount
++
+app_global_put
+int 1
+return
+
+// claim_debt
+claimdebt_10:
+global GroupSize
+int 1
+==
+txn GroupIndex
+int 0
+==
+&&
+assert
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+assert
+byte "global_lend_status"
+app_global_get
+byte "paid"
+==
+gtxn 0 TypeEnum
+int appl
+==
+&&
+gtxn 0 ApplicationID
+global CurrentApplicationID
+==
+&&
+gtxn 0 Sender
+global CreatorAddress
+==
+&&
+gtxn 0 Fee
+global MinTxnFee
+int 2
+*
+==
+&&
+assert
+global CreatorAddress
+global CurrentApplicationAddress
+balance
+global CurrentApplicationAddress
+min_balance
+-
+callsub payment_2
+byte "global_lend_status"
+byte "debt_claimed"
+app_global_put
+int 1
+return
+
+// claim_nft
+claimnft_11:
+global GroupSize
+int 2
+==
+txn GroupIndex
+int 1
+==
+&&
+assert
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+&&
+assert
+byte "global_lend_status"
+app_global_get
+byte "lent"
+==
+global LatestTimestamp
+byte "global_lend_date"
+app_global_get
+byte "global_lend_time"
+app_global_get
++
+>
+&&
+gtxn 0 TypeEnum
+int axfer
+==
+&&
+gtxn 0 Fee
+global MinTxnFee
+==
+&&
+gtxn 0 Sender
+global CreatorAddress
+==
+&&
+gtxn 0 AssetReceiver
+global CreatorAddress
+==
+&&
+gtxn 0 XferAsset
+byte "global_lend_asset"
+app_global_get
+==
+&&
+gtxn 0 AssetAmount
+int 0
+==
+&&
+gtxn 0 AssetCloseTo
+global ZeroAddress
+==
+&&
+gtxn 1 TypeEnum
+int appl
+==
+&&
+gtxn 1 ApplicationID
+global CurrentApplicationID
+==
+&&
+gtxn 1 Sender
+global CreatorAddress
+==
+&&
+gtxn 1 Fee
+global MinTxnFee
+int 2
+*
+==
+&&
+gtxna 1 Assets 0
+byte "global_lend_asset"
+app_global_get
+==
+&&
+assert
+byte "global_lend_asset"
+app_global_get
+global CreatorAddress
+int 1
+callsub assettransfer_1
+byte "global_lend_status"
+byte "nft_claimed"
+app_global_put
+int 1
+return

@@ -1,0 +1,22 @@
+FROM node:16.16.0-alpine
+
+WORKDIR /usr/src/app
+
+ENV WEB_HOST "https://shufl.app"
+
+ENV MAINNET_NODE_ADDRESS "http://AlgorandeNodeLoadBalancer-290148600.us-east-1.elb.amazonaws.com:8080/"
+ENV MAINNET_NODE_TOKEN "d9c9c70de850ee8008923b6de0bf5bd52e8a99490c6700250d87cef6093b0985"
+
+ENV MAINNET_ALGOD_ADDRESS "http://AlgorandeNodeLoadBalancer-290148600.us-east-1.elb.amazonaws.com"
+ENV MAINNET_ALGOD_PORT 8080
+
+COPY package*.json ./
+
+RUN npm install
+RUN npm ci --only=production
+
+# Bundle app source
+COPY . .
+
+EXPOSE 3001
+CMD [ "node", "index.js" ]
